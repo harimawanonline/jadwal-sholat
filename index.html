@@ -243,56 +243,70 @@
         console.warn("Menggunakan jadwal default karena proxy gagal.");
     }
 
-    // --- FUNGSI UTAMA FETCH DENGAN PROXY ---
-    async function fetchAndDisplayJadwalSimple(date) {
-        const timestamp = Math.floor(date.getTime() / 1000);
+    // --- FUNGSI UTAMA FETCH DENGAN PROXY (SUBUH +8 MENIT) ---
+async function fetchAndDisplayJadwalSimple(date) {
+    const timestamp = Math.floor(date.getTime() / 1000);
+    const targetUrl = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${KOTA_LAT}&longitude=${KOTA_LON}&method=${METODE_PERHITUNGAN}`;
+    const url = CORS_PROXY_URL + encodeURIComponent(targetUrl);
+
+    jadwalDivSimple.innerHTML = "Memuat jadwal...";
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Proxy/API Error (Status: ${res.status}).`);
+
+        const json = await res.json();
+        if (!json.data || !json.data.timings) throw new Error("Data jadwal tidak ditemukan dari API.");
+
+        const j = json.data.timings;
+        const tanggal = json.data.date.readable;
         
-        // 1. URL target Aladhan
-        const targetUrl = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${KOTA_LAT}&longitude=${KOTA_LON}&method=${METODE_PERHITUNGAN}`;
+        // --- LOGIKA MODIFIKASI SUBUH (+8 MENIT) ---
+        const originalSubuh = j.Fajr;
         
-        // 2. Gabungkan dengan URL Proxy dan lakukan URL encoding
-        // Ini adalah kunci agar API berfungsi di lingkungan hosting statis.
-        const url = CORS_PROXY_URL + encodeURIComponent(targetUrl);
+        const [hourStr, minuteStr] = originalSubuh.split(':');
+        let hours = parseInt(hourStr, 10);
+        let minutes = parseInt(minuteStr, 10);
+        
+        // Tambahkan 8 menit ke waktu Subuh
+        minutes += 8;
+        
+        // Handle overflow (jika menit >= 60)
+        if (minutes >= 60) {
+            hours = (hours + Math.floor(minutes / 60)) % 24;
+            minutes = minutes % 60;
+        }
 
-        jadwalDivSimple.innerHTML = "Memuat jadwal...";
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Proxy/API Error (Status: ${res.status}).`);
+        // Format kembali menjadi HH:MM
+        const modifiedSubuh = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        // --- AKHIR LOGIKA MODIFIKASI ---
+        
+        // Tampilkan jadwal dari API
+        jadwalDivSimple.innerHTML = `
+            <span style="color: yellow; font-weight: bold;">(JADWAL HARI INI)</span><br>
+            Tanggal: <strong>${tanggal}</strong><br>
+            Terbit: ${j.Sunrise} (Syuruq)<br>
+            Subuh : ${modifiedSubuh} <span style="font-size: 12px;">(asli: ${originalSubuh} +8m)</span><br>
+            Dzuhur : ${j.Dhuhr}<br>
+            Ashar : ${j.Asr}<br>
+            Maghrib : ${j.Maghrib}<br>
+            Isya : ${j.Isha}
+        `;
 
-            const json = await res.json();
-            if (!json.data || !json.data.timings) throw new Error("Data jadwal tidak ditemukan dari API.");
-
-            const j = json.data.timings;
-            const tanggal = json.data.date.readable;
-            const subuhWaktu = j.Fajr; 
-
-            // Tampilkan jadwal dari API
-            jadwalDivSimple.innerHTML = `
-                <span style="color: yellow; font-weight: bold;">(JADWAL HARI INI)</span><br>
-                Tanggal: <strong>${tanggal}</strong><br>
-                Terbit: ${j.Sunrise} (Syuruq)<br>
-                Subuh : ${subuhWaktu}<br>
-                Dzuhur : ${j.Dhuhr}<br>
-                Ashar : ${j.Asr}<br>
-                Maghrib : ${j.Maghrib}<br>
-                Isya : ${j.Isha}
-            `;
-
-            window.prayerTimesSimple = {
-                "Subuh": subuhWaktu,
-                "Dzuhur": j.Dhuhr,
-                "Ashar": j.Asr,
-                "Maghrib": j.Maghrib,
-                "Isya": j.Isha
-            };
-            window.prayerDateSimple = date; 
-            return true; 
-            
-        } catch (error) {
-            console.error("Error fetching schedule from Proxy/API:", error);
-            return false; 
-        }
-    }
+        window.prayerTimesSimple = {
+            "Subuh": modifiedSubuh,
+            "Dzuhur": j.Dhuhr,
+            "Ashar": j.Asr,
+            "Maghrib": j.Maghrib,
+            "Isya": j.Isha
+        };
+        window.prayerDateSimple = date; 
+        return true; 
+        
+    } catch (error) {
+        console.error("Error fetching schedule from Proxy/API:", error);
+        return false; 
+    }
+}
 
 
     function getNextPrayerTimesSimple(currentDate, times) {
