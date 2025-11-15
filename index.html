@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Adzan Sleman</title>
+    <style>
+        /* --- STYLING ADZAN --- */
+        .box-adzan-simple {
+          background: linear-gradient(to bottom, #0b5134, #145c3f);
+          color: #f0f0f0; 
+          padding: 30px 20px; 
+          border-radius: 16px; 
+          text-align: center;
+          width: 100%;
+          max-width: 400px; 
+          margin: 20px auto; 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255,215,0,0.4); 
+        }
+        .title-simple {
+          font-size: 28px;
+          font-weight: 700;
+          margin-bottom: 20px;
+          color: gold; 
+          border-bottom: 2px solid rgba(255,215,0,0.3); 
+          padding-bottom: 10px;
+        }
+        #clock-simple {
+          font-size: 56px; 
+          font-weight: 800; 
+          margin: 20px 0 10px 0; 
+          color: #ffffff; 
+        }
+        .select-simple {
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 16px;
+          border: 1px solid gold;
+          background: #145c3f; 
+          color: gold;
+          appearance: none; 
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffd700%22%20d%3D%22M287%2095.6L146.2%20237.4%205.4%2095.6z%22%2F%3E%3C%2Fsvg%3E"); 
+          background-repeat: no-repeat;
+          background-position: right 8px top 50%;
+          background-size: 12px auto;
+          min-width: 120px;
+        }
+        #jadwal-simple {
+          font-size: 16px;
+          line-height: 1.8;
+          background: rgba(255,215,0,0.1); 
+          padding: 15px;
+          border-radius: 12px;
+          margin-top: 15px;
+          margin-bottom: 20px;
+          text-align: left; 
+          color: #ffeb3b;
+        }
+        .countdown-header-simple {
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 8px;
+          color: #c0c0c0; 
+        }
+        #countdown-simple {
+          font-size: 38px;
+          font-weight: bold;
+          margin-bottom: 25px;
+          color: gold; 
+        }
+        .btn-simple {
+          width: 80%; 
+          max-width: 200px;
+          padding: 12px 20px; 
+          font-size: 18px;
+          border-radius: 10px;
+          border: none;
+          cursor: pointer;
+          background: gold;
+          color: #0b5134;
+          font-weight: bold;
+          transition: background 0.3s, transform 0.1s;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-simple:hover {
+          background: #ffec85;
+        }
+        .btn-simple:active {
+          transform: scale(0.98);
+        }
+        .voice-selector-simple {
+          margin-top: 25px;
+          padding-top: 15px;
+          border-top: 1px dashed rgba(255,215,0,0.3); 
+        }
+        .voice-selector-simple .select-simple {
+          min-width: 100px;
+        }
+        .info-note-simple {
+          font-size: 13px;
+          margin-top: 15px;
+          color: #ffeb3b;
+          opacity: 0.8;
+        }
+        .box-adzan-simple h3 {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="box-adzan-simple">
+        <div class="title-simple">
+            <span style="font-size: 20px; vertical-align: middle;">🕌</span> 
+            Jadwal Adzan
+        </div>
+
+        <div style="font-size: 18px; margin-bottom: 15px; color: gold;">
+            Kota: <span id="currentCityName-simple" style="font-weight: bold;">Sleman (Yogyakarta)</span>
+        </div>
+
+        <div id="clock-simple"></div> 
+
+        <div id="jadwal-simple">Memuat jadwal...</div>
+
+        <h3 class="countdown-header-simple">Menuju Adzan Berikutnya:</h3>
+        <div id="countdown-simple">Memuat...</div> 
+        
+        <button class="btn-simple" onclick="playAdzanSimple()">
+            ▶️ Putar Adzan
+        </button>
+        
+        <div class="voice-selector-simple">
+            Pilih suara adzan:
+            <select id="voiceSelect-simple" class="select-simple">
+                <option value="https://www.islamcan.com/audio/adhan/azan1.mp3" data-subuh="https://www.islamcan.com/audio/adhan/azan2.mp3" selected>Makkah</option>
+                <option value="https://www.islamcan.com/audio/adhan/azan2.mp3" data-subuh="https://www.islamcan.com/audio/adhan/azan1.mp3">Madinah</option>
+            </select>
+        </div>
+
+        <div class="info-note-simple">
+            ⚠️ Jadwal diambil via Proxy (Aladhan API).
+        </div>
+    </div>
+
+    <audio id="adzanSound-simple" src="https://www.islamcan.com/audio/adhan/azan1.mp3" preload="auto"></audio>
+
+    <script>
+    // --- KONFIGURASI API DAN LOKASI (SLEMAN/YOGYAKARTA) ---
+    const KOTA_LAT = -7.77; 
+    const KOTA_LON = 110.37;
+    const KOTA_NAMA = "Sleman (Yogyakarta)";
+    const METODE_PERHITUNGAN = 11; // Metode Kemenag Indonesia
+
+    // URL PROXY UNTUK MENGATASI CORS DI BLOGGER/LINGKUNGAN STATIS
+    const CORS_PROXY_URL = "https://corsproxy.io/?"; 
+
+    // --- Data Jadwal Default (Fallback) ---
+    const defaultPrayerTimes = {
+        "Subuh": "04:05", "Dzuhur": "11:38", "Ashar": "14:59",
+        "Maghrib": "17:50", "Isya": "19:00" 
+    };
+    const defaultCityName = KOTA_NAMA + " (Default)";
+    const defaultTanggal = "Perkiraan Hari Ini";
+
+
+    let countdownIntervalSimple; 
+    const audioSimple = document.getElementById("adzanSound-simple");
+    const voiceSelectSimple = document.getElementById("voiceSelect-simple");
+    const clockDivSimple = document.getElementById("clock-simple");
+    const jadwalDivSimple = document.getElementById("jadwal-simple");
+    const countdownDivSimple = document.getElementById("countdown-simple");
+    const currentCityNameSimple = document.getElementById("currentCityName-simple");
+
+    window.prayerTimesSimple = {}; 
+    window.prayerDateSimple = null; 
+    let currentAdzanSource = voiceSelectSimple.value; 
+    const subuhRedaksional = "☀️ **Adzan Subuh** Tiba! (Sholat lebih baik daripada tidur)";
+
+    currentCityNameSimple.textContent = KOTA_NAMA;
+
+    // --- FUNGSI UTILITY ---
+
+    function updateAdzanSource() {
+        currentAdzanSource = voiceSelectSimple.value;
+        audioSimple.src = currentAdzanSource;
+        audioSimple.load(); 
+    }
+
+    voiceSelectSimple.addEventListener("change", e => {
+        updateAdzanSource();
+    });
+
+    function playAdzanSimple() { 
+        audioSimple.play().catch(error => {
+            console.error("Gagal memutar audio:", error);
+        });
+    }
+
+    async function loadJadwalSimple() {
+        const today = new Date();
+        
+        if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
+        countdownDivSimple.innerHTML = "Memuat...";
+
+        let success = await fetchAndDisplayJadwalSimple(today);
+
+        if (!success) {
+            useDefaultJadwal();
+            startCountdownSimple();
+            return; 
+        }
+        
+        const nextTimes = getNextPrayerTimesSimple(today, window.prayerTimesSimple);
+        
+        if (nextTimes.length === 0) {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            await fetchAndDisplayJadwalSimple(tomorrow);
+        }
+        
+        startCountdownSimple();
+    }
+
+
+    function useDefaultJadwal() {
+        window.prayerTimesSimple = defaultPrayerTimes;
+        window.prayerDateSimple = new Date();
+        currentCityNameSimple.textContent = defaultCityName;
+        jadwalDivSimple.innerHTML = `
+            <span style="color: red; font-weight: bold;">⚠️ GAGAL MUAT DARI PROXY.</span><br>
+            Tanggal: <strong>${defaultTanggal}</strong><br>
+            Subuh : ${defaultPrayerTimes.Subuh}<br>
+            Dzuhur : ${defaultPrayerTimes.Dzuhur}<br>
+            Ashar : ${defaultPrayerTimes.Ashar}<br>
+            Maghrib : ${defaultPrayerTimes.Maghrib}<br>
+            Isya : ${defaultPrayerTimes.Isya}
+        `;
+        console.warn("Menggunakan jadwal default karena proxy gagal.");
+    }
+
+    // --- FUNGSI UTAMA FETCH DENGAN PROXY ---
+    async function fetchAndDisplayJadwalSimple(date) {
+        const timestamp = Math.floor(date.getTime() / 1000);
+        
+        // 1. URL target Aladhan
+        const targetUrl = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${KOTA_LAT}&longitude=${KOTA_LON}&method=${METODE_PERHITUNGAN}`;
+        
+        // 2. Gabungkan dengan URL Proxy dan lakukan URL encoding
+        // Ini adalah kunci agar API berfungsi di lingkungan hosting statis.
+        const url = CORS_PROXY_URL + encodeURIComponent(targetUrl);
+
+        jadwalDivSimple.innerHTML = "Memuat jadwal...";
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Proxy/API Error (Status: ${res.status}).`);
+
+            const json = await res.json();
+            if (!json.data || !json.data.timings) throw new Error("Data jadwal tidak ditemukan dari API.");
+
+            const j = json.data.timings;
+            const tanggal = json.data.date.readable;
+            const subuhWaktu = j.Fajr; 
+
+            // Tampilkan jadwal dari API
+            jadwalDivSimple.innerHTML = `
+                <span style="color: yellow; font-weight: bold;">(JADWAL HARI INI)</span><br>
+                Tanggal: <strong>${tanggal}</strong><br>
+                Terbit: ${j.Sunrise} (Syuruq)<br>
+                Subuh : ${subuhWaktu}<br>
+                Dzuhur : ${j.Dhuhr}<br>
+                Ashar : ${j.Asr}<br>
+                Maghrib : ${j.Maghrib}<br>
+                Isya : ${j.Isha}
+            `;
+
+            window.prayerTimesSimple = {
+                "Subuh": subuhWaktu,
+                "Dzuhur": j.Dhuhr,
+                "Ashar": j.Asr,
+                "Maghrib": j.Maghrib,
+                "Isya": j.Isha
+            };
+            window.prayerDateSimple = date; 
+            return true; 
+            
+        } catch (error) {
+            console.error("Error fetching schedule from Proxy/API:", error);
+            return false; 
+        }
+    }
+
+
+    function getNextPrayerTimesSimple(currentDate, times) {
+        const now = new Date();
+        if (!currentDate) return []; 
+        const dateStr = now.toISOString().split("T")[0]; 
+        const nextTimes = [];
+        const prayerOrder = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+
+        for (const name of prayerOrder) {
+            const timeStr = times[name];
+            if (!timeStr) continue;
+            
+            const prayerDateTime = new Date(`${dateStr}T${timeStr}:00`);
+            
+            if (prayerDateTime > now) {
+                nextTimes.push({ name, time: prayerDateTime });
+                break; 
+            }
+        }
+        
+        if (nextTimes.length === 0 && times.Subuh) {
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowDateStr = tomorrow.toISOString().split("T")[0];
+
+            const nextSubuhTime = new Date(`${tomorrowDateStr}T${times.Subuh}:00`);
+            nextTimes.push({ name: "Subuh", time: nextSubuhTime });
+        }
+        
+        return nextTimes;
+    }
+
+
+    function startCountdownSimple() {
+        if (countdownIntervalSimple) {
+            clearInterval(countdownIntervalSimple);
+        }
+        
+        updateAdzanSource(); 
+        
+        countdownIntervalSimple = setInterval(async () => {
+            const now = new Date();
+            const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
+
+            if (nextPrayers.length === 0) {
+                countdownDivSimple.innerHTML = "Memuat jadwal besok...";
+                clearInterval(countdownIntervalSimple);
+                await loadJadwalSimple(); 
+                return;
+            }
+
+            const nextPrayer = nextPrayers[0];
+            const { name: nextName, time: nextTime } = nextPrayer;
+            const diff = nextTime - now;
+
+            if (diff <= 1000 && diff > -1000) { 
+                
+                const originalSrc = audioSimple.src;
+                let message = `🕌 **Adzan ${nextName}** Tiba!`;
+                
+                if (nextName === "Subuh") {
+                    const selectedOption = voiceSelectSimple.options[voiceSelectSimple.selectedIndex];
+                    const subuhSrc = selectedOption.getAttribute('data-subuh');
+
+                    message = subuhRedaksional;
+                    if (subuhSrc) {
+                        audioSimple.src = subuhSrc;
+                        audioSimple.load();
+                    }
+                }
+
+                playAdzanSimple();
+                countdownDivSimple.innerHTML = message;
+                
+                setTimeout(() => {
+                    audioSimple.src = originalSrc;
+                    audioSimple.load();
+                    loadJadwalSimple(); 
+                }, 5000); 
+                return;
+            }
+            
+            const totalSeconds = Math.floor(diff / 1000);
+            const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const mm = String(Math.floor(totalSeconds / 60) % 60).padStart(2, '0');
+            const ss = String(totalSeconds % 60).padStart(2, '0');
+
+            countdownDivSimple.innerHTML = `${nextName} : ${hh}:${mm}:${ss}`;
+            
+        }, 1000); 
+    }
+
+
+    function updateClockSimple() {
+        clockDivSimple.innerHTML = new Date().toLocaleTimeString('id-ID', { hour12: false });
+    }
+
+    // Inisialisasi
+    updateAdzanSource();
+    setInterval(updateClockSimple, 1000);
+    loadJadwalSimple();
+    updateClockSimple();
+    </script>
+</body>
+</html>
