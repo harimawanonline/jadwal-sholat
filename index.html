@@ -310,35 +310,40 @@ async function fetchAndDisplayJadwalSimple(date) {
 
 
     function getNextPrayerTimesSimple(currentDate, times) {
-        const now = new Date();
-        if (!currentDate) return []; 
-        const dateStr = now.toISOString().split("T")[0]; 
-        const nextTimes = [];
-        const prayerOrder = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+    const now = new Date();
+    // Gunakan tanggal saat ini untuk string perbandingan
+    const dateStr = now.toISOString().split("T")[0]; 
+    const nextTimes = [];
+    // Urutan waktu sholat yang pasti
+    const prayerOrder = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
 
-        for (const name of prayerOrder) {
-            const timeStr = times[name];
-            if (!timeStr) continue;
-            
-            const prayerDateTime = new Date(`${dateStr}T${timeStr}:00`);
-            
-            if (prayerDateTime > now) {
-                nextTimes.push({ name, time: prayerDateTime });
-                break; 
-            }
-        }
+    for (const name of prayerOrder) {
+        const timeStr = times[name];
+        if (!timeStr) continue;
         
-        if (nextTimes.length === 0 && times.Subuh) {
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowDateStr = tomorrow.toISOString().split("T")[0];
-
-            const nextSubuhTime = new Date(`${tomorrowDateStr}T${times.Subuh}:00`);
-            nextTimes.push({ name: "Subuh", time: nextSubuhTime });
-        }
+        // Buat objek waktu untuk perbandingan hari ini
+        const prayerDateTime = new Date(`${dateStr}T${timeStr}:00`);
         
-        return nextTimes;
+        // Logika: Jika Waktu Sholat > Waktu Sekarang, maka itu adalah sholat berikutnya.
+        if (prayerDateTime.getTime() > now.getTime()) { 
+            nextTimes.push({ name, time: prayerDateTime });
+            break; // Berhenti setelah menemukan yang pertama
+        }
     }
+    
+    // Jika tidak ada sholat yang tersisa hari ini, targetkan Subuh besok
+    if (nextTimes.length === 0 && times.Subuh) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowDateStr = tomorrow.toISOString().split("T")[0];
+
+        // Hitung Subuh Besok (agar countdown tidak berhenti di malam hari)
+        const nextSubuhTime = new Date(`${tomorrowDateStr}T${times.Subuh}:00`);
+        nextTimes.push({ name: "Subuh", time: nextSubuhTime });
+    }
+    
+    return nextTimes;
+}
 
 
     function startCountdownSimple() {
