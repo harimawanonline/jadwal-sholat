@@ -284,52 +284,97 @@
         }, 1000);
     }
 
-    // Fungsi utama untuk memuat jadwal (dari JSON lokal)
-    async function loadJadwalSimple() {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+   // Fungsi utama untuk memuat jadwal (dari JSON lokal)
+async function loadJadwalSimple() {
+    const now = new Date(); // Waktu saat ini (e.g., 2025-11-16 21:18)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Hanya tanggal hari ini
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-        if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
-        countdownDivSimple.innerHTML = "Memuat...";
+    if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
+    countdownDivSimple.innerHTML = "Memuat...";
 
-        let rawSchedule;
-        let success = false;
-        let todayData, nextData;
+    let rawSchedule;
+    let success = false;
+    let dataToUse; // Data sholat yang akan dipakai (bisa hari ini atau besok)
+    let dateToUse = today; // Tanggal yang akan dipakai (default hari ini)
 
-        try {
-            // AMBIL FILE JSON LOKAL
-            const res = await fetch('jadwal.json'); 
-            if (!res.ok) throw new Error("Gagal memuat jadwal.json lokal.");
-            
-            rawSchedule = await res.json();
-            
-            // Cari jadwal hari ini dan besok
-            todayData = findScheduleByDate(rawSchedule.schedule, today);
-            nextData = findScheduleByDate(rawSchedule.schedule, tomorrow);
-            
-            if (todayData) {
-                // Jadwal hari ini ditemukan
+    try {
+        const res = await fetch('jadwal.json'); 
+        if (!res.ok) throw new Error("Gagal memuat jadwal.json lokal.");
+        
+        rawSchedule = await res.json();
+        
+        // Cek apakah ada sholat yang akan datang hari ini
+        const todayData = findScheduleByDate(rawSchedule.schedule, today);
+        
+        if (todayData) {
+            window.prayerTimesSimple = {
+                "Subuh": todayData.Subuh, "Dzuhur": todayData.Dzuhur, "Ashar": todayData.Ashar,
+                "Maghrib": todayData.Maghrib, "Isya": todayData.Isya
+            };
+
+            // Coba temukan sholat berikutnya menggunakan data hari ini
+            const nextTodayPrayers = getNextPrayerTimesSimple(today, window.prayerTimesSimple);
+
+            if (nextTodayPrayers.length > 0) {
+                // Ada sholat yang akan datang hari ini. Gunakan data hari ini.
+                dataToUse = todayData;
+                dateToUse = today;
                 success = true;
-            } else if (nextData) {
-                 // Jadwal hari ini terlewat/habis, gunakan jadwal besok (untuk Isya ke Subuh)
-                 todayData = nextData;
-                 success = true;
             } else {
-                 throw new Error("Jadwal hari ini dan besok tidak ditemukan di JSON.");
+                // Semua sholat hari ini sudah lewat. Paksa cari data BESOK.
+                const nextData = findScheduleByDate(rawSchedule.schedule, tomorrow);
+                if (nextData) {
+                    dataToUse = nextData;
+                    dateToUse = tomorrow;
+                    success = true;
+                } else {
+                    throw new Error("Jadwal besok tidak ditemukan di JSON. Perlu diperbarui.");
+                }
             }
-            
-        } catch (error) {
-            console.error("Error memuat/menganalisis JSON:", error);
-            success = false;
+        } else {
+            // Data hari ini (tanggal saat ini) tidak ada di JSON sama sekali
+            throw new Error("Jadwal hari ini tidak ditemukan di JSON.");
         }
+        
+    } catch (error) {
+        console.error("Error memuat/menganalisis JSON:", error);
+        success = false;
+    }
 
-        if (!success) {
-            useDefaultJadwal();
-            // Jeda Stabilisasi 1 detik
-            setTimeout(startCountdownSimple, 1000); 
-            return; 
-        }
+    if (!success) {
+        useDefaultJadwal();
+        setTimeout(startCountdownSimple, 1000); 
+        return; 
+    }
+    
+    // DATA DITEMUKAN & DIPILIH: Update tampilan dan global variables
+    
+    jadwalDivSimple.innerHTML = `
+        <span style="color: yellow; font-weight: bold;">(JADWAL HARIAN)</span><br>
+        Tanggal: <strong>${dataToUse.date}</strong><br>
+        Subuh : ${dataToUse.Subuh} <span style="font-size: 12px;">(Sudah di-offset)</span><br>
+        Terbit: ${dataToUse.Terbit} (Syuruq)<br>
+        Dzuhur : ${dataToUse.Dzuhur}<br>
+        Ashar : ${dataToUse.Ashar}<br>
+        Maghrib : ${dataToUse.Maghrib}<br>
+        Isya : ${dataToUse.Isya}
+    `;
+
+    // Update global prayerTimes dan prayerDate dengan data yang dipilih
+    window.prayerTimesSimple = {
+        "Subuh": dataToUse.Subuh,
+        "Dzuhur": dataToUse.Dzuhur,
+        "Ashar": dataToUse.Ashar,
+        "Maghrib": dataToUse.Maghrib,
+        "Isya": dataToUse.Isya
+    };
+    window.prayerDateSimple = dateToUse; 
+
+    // Jeda Stabilisasi 1 detik sebelum memulai countdown
+    setTimeout(startCountdownSimple, 1000); 
+}
         
         // DATA DITEMUKAN: Update tampilan dan global variables
         const currentData = todayData; 
