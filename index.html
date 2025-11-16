@@ -342,10 +342,12 @@
                 throw new Error("Jadwal hari ini tidak ditemukan di JSON.");
             }
             
-        } catch (error) {
-            console.error("Error memuat/menganalisis JSON:", error);
-            success = false;
-        }
+// SETELAH:
+} catch (error) {
+    console.error("Error memuat/menganalisis JSON:", error);
+    jadwalDivSimple.innerHTML = `Gagal memuat file! Cek Konsol (F12) untuk detail error.`;
+    success = false;
+}
 
         // Tambahkan Pengecekan Debugging
         console.log("SUCCESS:", success);
