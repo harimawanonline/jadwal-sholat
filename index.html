@@ -130,7 +130,7 @@
     // --- KONFIGURASI UMUM ---
     const KOTA_NAMA = "Sleman (Yogyakarta)";
     // Daftar waktu sholat yang digunakan dalam iterasi (Terbit/Syuruq ditambahkan)
-    const PRAYER_ORDER = ["Subuh", "Terbit", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+    const PRAYER_ORDER = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
     
     // --- VARIABEL GLOBAL & ELEMENT ---
     let countdownIntervalSimple;
@@ -359,7 +359,6 @@
         // Update global prayerTimes dan prayerDate dengan data yang dipilih
         window.prayerTimesSimple = {
             "Subuh": dataToUse.Subuh,
-            "Terbit": dataToUse.Terbit,
             "Dzuhur": dataToUse.Dzuhur,
             "Ashar": dataToUse.Ashar,
             "Maghrib": dataToUse.Maghrib,
