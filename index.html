@@ -220,30 +220,32 @@
         });
     }
 
-    async function loadJadwalSimple() {
-        const today = new Date();
-        
-        if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
-        countdownDivSimple.innerHTML = "Memuat...";
+  async function loadJadwalSimple() {
+    const today = new Date();
+    
+    if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
+    countdownDivSimple.innerHTML = "Memuat...";
 
-        let success = await fetchAndDisplayJadwalSimple(today);
+    let success = await fetchAndDisplayJadwalSimple(today);
 
-        if (!success) {
-            useDefaultJadwal();
-            startCountdownSimple();
-            return; 
-        }
-        
-        const nextTimes = getNextPrayerTimesSimple(today, window.prayerTimesSimple);
-        
-        if (nextTimes.length === 0) {
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            await fetchAndDisplayJadwalSimple(tomorrow);
-        }
-        
-        startCountdownSimple();
+    if (!success) {
+        useDefaultJadwal();
+        // Beri jeda 1 detik sebelum memulai countdown dengan data default
+        setTimeout(startCountdownSimple, 1000); 
+        return; 
     }
+    
+    const nextTimes = getNextPrayerTimesSimple(today, window.prayerTimesSimple);
+    
+    if (nextTimes.length === 0) {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        await fetchAndDisplayJadwalSimple(tomorrow);
+    }
+    
+    // Beri jeda 1 detik sebelum memulai countdown dengan data API
+    setTimeout(startCountdownSimple, 1000); 
+}
 
 
     function useDefaultJadwal() {
