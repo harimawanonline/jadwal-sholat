@@ -293,7 +293,7 @@ async function fetchAndDisplayJadwalSimple(date) {
         
 // Tampilkan jadwal dari API (dengan Subuh di atas)
 jadwalDivSimple.innerHTML = `
-    <span style="color: yellow; font-weight: bold;">(JADWAL HARI INI)</span><br>
+    <span style="color: yellow; font-weight: bold;"> - JADWAL HARI INI -</span><br>
     Tanggal: <strong>${tanggal}</strong><br>
     Subuh : ${modifiedSubuh} <span style="font-size: 12px;">(asli: ${originalSubuh} +8m)</span><br>
     Terbit: ${j.Sunrise} (Syuruq)<br>
