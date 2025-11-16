@@ -273,11 +273,17 @@ async function fetchAndDisplayJadwalSimple(date) {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Proxy/API Error (Status: ${res.status}).`);
 
-        const json = await res.json();
-        if (!json.data || !json.data.timings) throw new Error("Data jadwal tidak ditemukan dari API.");
-
         const j = json.data.timings;
-        const tanggal = json.data.date.readable;
+        const tanggal = json.data.date.readable;
+        
+        // --- AWAL KODE VALIDASI ---
+        const requiredKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        for (const key of requiredKeys) {
+            if (!j[key]) {
+                // Jika salah satu waktu sholat hilang dari API, kita paksa error
+                throw new Error(`Data API tidak lengkap: Waktu ${key} hilang.`); 
+            }
+        }
         
         // --- LOGIKA MODIFIKASI SUBUH (+8 MENIT) ---
         const originalSubuh = j.Fajr;
