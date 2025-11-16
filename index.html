@@ -352,63 +352,73 @@ async function fetchAndDisplayJadwalSimple(date) {
 }
 
     function startCountdownSimple() {
-        if (countdownIntervalSimple) {
+    if (countdownIntervalSimple) {
+        clearInterval(countdownIntervalSimple);
+    }
+    
+    updateAdzanSource(); 
+    
+    countdownIntervalSimple = setInterval(async () => {
+        const now = new Date();
+        const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
+
+        if (nextPrayers.length === 0) {
+            countdownDivSimple.innerHTML = "Memuat jadwal besok...";
             clearInterval(countdownIntervalSimple);
+            await loadJadwalSimple(); 
+            return;
+        }
+
+        const nextPrayer = nextPrayers[0];
+        const { name: nextName, time: nextTime } = nextPrayer;
+        let diff = nextTime - now; // JANGAN pake const, karena kita akan modifikasi.
+
+        // --- PERBAIKAN LOGIKA: MEMASTIKAN DIFF TIDAK NEGATIF ---
+        if (diff < 0) {
+            // Jika hasilnya negatif, artinya Adzan sudah lewat, 
+            // kita harus paksa skrip memuat jadwal hari berikutnya.
+            countdownDivSimple.innerHTML = `⚠️ ${nextName} sudah berlalu! Memuat jadwal...`;
+            clearInterval(countdownIntervalSimple);
+            await loadJadwalSimple();
+            return;
+        }
+
+        if (diff <= 1000 && diff > -1000) { 
+            
+            const originalSrc = audioSimple.src;
+            let message = `🕌 **Adzan ${nextName}** Tiba!`;
+            
+            if (nextName === "Subuh") {
+                const selectedOption = voiceSelectSimple.options[voiceSelectSimple.selectedIndex];
+                const subuhSrc = selectedOption.getAttribute('data-subuh');
+
+                message = subuhRedaksional;
+                if (subuhSrc) {
+                    audioSimple.src = subuhSrc;
+                    audioSimple.load();
+                }
+            }
+
+            playAdzanSimple();
+            countdownDivSimple.innerHTML = message;
+            
+            setTimeout(() => {
+                audioSimple.src = originalSrc;
+                audioSimple.load();
+                loadJadwalSimple(); 
+            }, 5000); 
+            return;
         }
         
-        updateAdzanSource(); 
+        const totalSeconds = Math.floor(diff / 1000);
+        const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const mm = String(Math.floor(totalSeconds / 60) % 60).padStart(2, '0');
+        const ss = String(totalSeconds % 60).padStart(2, '0');
+
+        countdownDivSimple.innerHTML = `${nextName} : ${hh}:${mm}:${ss}`;
         
-        countdownIntervalSimple = setInterval(async () => {
-            const now = new Date();
-            const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
-
-            if (nextPrayers.length === 0) {
-                countdownDivSimple.innerHTML = "Memuat jadwal besok...";
-                clearInterval(countdownIntervalSimple);
-                await loadJadwalSimple(); 
-                return;
-            }
-
-            const nextPrayer = nextPrayers[0];
-            const { name: nextName, time: nextTime } = nextPrayer;
-            const diff = nextTime - now;
-
-            if (diff <= 1000 && diff > -1000) { 
-                
-                const originalSrc = audioSimple.src;
-                let message = `🕌 **Adzan ${nextName}** Tiba!`;
-                
-                if (nextName === "Subuh") {
-                    const selectedOption = voiceSelectSimple.options[voiceSelectSimple.selectedIndex];
-                    const subuhSrc = selectedOption.getAttribute('data-subuh');
-
-                    message = subuhRedaksional;
-                    if (subuhSrc) {
-                        audioSimple.src = subuhSrc;
-                        audioSimple.load();
-                    }
-                }
-
-                playAdzanSimple();
-                countdownDivSimple.innerHTML = message;
-                
-                setTimeout(() => {
-                    audioSimple.src = originalSrc;
-                    audioSimple.load();
-                    loadJadwalSimple(); 
-                }, 5000); 
-                return;
-            }
-            
-            const totalSeconds = Math.floor(diff / 1000);
-            const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const mm = String(Math.floor(totalSeconds / 60) % 60).padStart(2, '0');
-            const ss = String(totalSeconds % 60).padStart(2, '0');
-
-            countdownDivSimple.innerHTML = `${nextName} : ${hh}:${mm}:${ss}`;
-            
-        }, 1000); 
-    }
+    }, 1000); 
+}
 
 
     function updateClockSimple() {
