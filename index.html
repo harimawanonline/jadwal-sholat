@@ -337,6 +337,14 @@
             success = false;
         }
 
+// ... di dalam loadJadwalSimple()
+
+// Tambahkan Pengecekan Debugging di sini:
+console.log("SUCCESS:", success);
+console.log("DATA DIPAKAI:", dataToUse);
+console.log("TANGGAL DIPAKAI:", dateToUse);
+
+        
         if (!success) {
             useDefaultJadwal();
             setTimeout(startCountdownSimple, 1000); 
