@@ -291,17 +291,17 @@ async function fetchAndDisplayJadwalSimple(date) {
         const modifiedSubuh = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
         // --- AKHIR LOGIKA MODIFIKASI ---
         
-        // Tampilkan jadwal dari API
-        jadwalDivSimple.innerHTML = `
-            <span style="color: yellow; font-weight: bold;">(JADWAL HARI INI)</span><br>
-            Tanggal: <strong>${tanggal}</strong><br>
-            Terbit: ${j.Sunrise} (Syuruq)<br>
-            Subuh : ${modifiedSubuh} <span style="font-size: 12px;">(asli: ${originalSubuh} +8m)</span><br>
-            Dzuhur : ${j.Dhuhr}<br>
-            Ashar : ${j.Asr}<br>
-            Maghrib : ${j.Maghrib}<br>
-            Isya : ${j.Isha}
-        `;
+// Tampilkan jadwal dari API (dengan Subuh di atas)
+jadwalDivSimple.innerHTML = `
+    <span style="color: yellow; font-weight: bold;">(JADWAL HARI INI)</span><br>
+    Tanggal: <strong>${tanggal}</strong><br>
+    Subuh : ${modifiedSubuh} <span style="font-size: 12px;">(asli: ${originalSubuh} +8m)</span><br>
+    Terbit: ${j.Sunrise} (Syuruq)<br>
+    Dzuhur : ${j.Dhuhr}<br>
+    Ashar : ${j.Asr}<br>
+    Maghrib : ${j.Maghrib}<br>
+    Isya : ${j.Isha}
+`;
 
         window.prayerTimesSimple = {
             "Subuh": modifiedSubuh,
