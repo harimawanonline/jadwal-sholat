@@ -421,11 +421,11 @@ jadwalDivSimple.innerHTML = `
             playAdzanSimple();
             countdownDivSimple.innerHTML = message;
             
-            setTimeout(() => {
-                audioSimple.src = originalSrc;
-                audioSimple.load();
-                loadJadwalSimple(); 
-            }, 180000); 
+setTimeout(() => {
+                    audioSimple.src = originalSrc;
+                    audioSimple.load();
+                    loadJadwalSimple(); 
+                }, 180000); // <-- 180.000 milidetik = 3 menit
             return;
         }
         
