@@ -57,7 +57,7 @@
             margin-top: 15px;
             margin-bottom: 20px;
             color: #ffeb3b;
-            text-align: center; /* Perbaikan Alignment */
+            text-align: center;
         }
         .voice-selector-simple {
             font-size: 14px;
@@ -129,8 +129,8 @@
 <script>
     // --- KONFIGURASI UMUM ---
     const KOTA_NAMA = "Sleman (Yogyakarta)";
-    // Daftar waktu sholat yang digunakan dalam iterasi
-    const PRAYER_ORDER = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"]; 
+    // Daftar waktu sholat yang digunakan dalam iterasi (Terbit/Syuruq ditambahkan)
+    const PRAYER_ORDER = ["Subuh", "Terbit", "Dzuhur", "Ashar", "Maghrib", "Isya"];
     
     // --- VARIABEL GLOBAL & ELEMENT ---
     let countdownIntervalSimple;
@@ -145,7 +145,7 @@
     
     // --- JADWAL DEFAULT (Fallback Jika File JSON Gagal) ---
     const defaultPrayerTimes = {
-        "Subuh": "04:05", "Dzuhur": "11:38", "Ashar": "14:59",
+        "Subuh": "04:05", "Terbit": "05:15", "Dzuhur": "11:38", "Ashar": "14:59",
         "Maghrib": "17:50", "Isya": "19:00" 
     };
 
@@ -155,9 +155,10 @@
         window.prayerTimesSimple = defaultPrayerTimes;
         window.prayerDateSimple = new Date();
         jadwalDivSimple.innerHTML = `
-            <span style="color: red; font-weight: bold;">(JADWAL DEFAULT)</span><br>
+            <span style="color: red; font-weight: bold;">(JADWAL DEFAULT - FAILED TO LOAD)</span><br>
             Tanggal: <strong>Gagal memuat jadwal lokal!</strong><br>
             Subuh : 04:05<br>
+            Terbit: 05:15 (Syuruq)<br>
             Dzuhur : 11:38<br>
             Ashar : 14:59<br>
             Maghrib : 17:50<br>
@@ -176,10 +177,14 @@
     // Fungsi untuk menemukan waktu sholat berikutnya
     function getNextPrayerTimesSimple(date, times) {
         const now = new Date();
-        const dateStr = date.toISOString().split("T")[0]; // Tanggal jadwal yang aktif (hari ini atau besok)
+        const dateStr = date.toISOString().split("T")[0]; 
         const nextTimes = [];
         
+        // PRAYER_ORDER = ["Subuh", "Terbit", "Dzuhur", "Ashar", "Maghrib", "Isya"]
         for (const name of PRAYER_ORDER) {
+            // Kita hanya menghitung countdown untuk Adzan (bukan Terbit)
+            if (name === "Terbit") continue; 
+
             const timeStr = times[name]; 
             if (!timeStr) continue; 
             
@@ -200,27 +205,24 @@
     function playAdzanSimple() {
         audioSimple.play().catch(error => {
             console.warn("Gagal memutar audio, mungkin diblokir oleh browser:", error);
-            // Instruksi ke pengguna jika diperlukan
             countdownDivSimple.innerHTML = "Klik 'Putar Adzan' sekali untuk mengaktifkan suara otomatis!";
         });
     }
 
     // Fungsi utama untuk memulai countdown
     function startCountdownSimple() {
-        // Hentikan interval lama jika ada
         if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
         
-        // Atur ulang interval setiap 1 detik
         countdownIntervalSimple = setInterval(function() {
             const now = new Date().getTime();
             const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
             
-            // KASUS 1: Tidak ada sholat hari ini (terjadi setelah Isya)
+            // KASUS 1: Tidak ada sholat yang akan datang hari ini/besok (terjadi setelah Isya)
             if (nextPrayers.length === 0) {
                 // Beri pesan dan panggil loadJadwalSimple() untuk memuat jadwal besok
                 countdownDivSimple.innerHTML = "Semua sholat hari ini telah usai. Memuat jadwal besok...";
                 clearInterval(countdownIntervalSimple);
-                // Kita panggil loadJadwalSimple() yang akan mengurus pengambilan data besok
+                // loadJadwalSimple() akan otomatis memuat jadwal besok
                 loadJadwalSimple(); 
                 return;
             }
@@ -234,7 +236,6 @@
             // KASUS 2: Waktu Sholat Sudah Tiba (diff sangat dekat 0)
             if (diff <= 1000 && diff > -1000) { 
                 
-                // 1. Ganti sumber audio khusus Subuh
                 let adzanSource = voiceSelectSimple.value;
                 let displayMessage = "Adzan Tiba!"; 
                 
@@ -249,27 +250,17 @@
                 
                 countdownDivSimple.innerHTML = `⭐ ${nextName}: ${displayMessage}`;
                 
-                // 2. Atur timeout untuk menghentikan Adzan (3 MENIT) dan memuat ulang jadwal
+                // Atur timeout untuk menghentikan Adzan (3 MENIT) dan memuat ulang jadwal
                 setTimeout(() => {
                     audioSimple.pause(); 
-                    // PENTING: loadJadwalSimple() akan memuat ulang jadwal besok/hari ini
-                    loadJadwalSimple(); 
-                }, 180000); // 180.000 milidetik = 3 Menit
+                    loadJadwalSimple(); 
+                }, 180000); // 3 Menit
                 
                 clearInterval(countdownIntervalSimple);
                 return;
             }
             
-            // KASUS 3: Waktu Sholat Sudah Lewat (terjadi pada saat refresh)
-            if (diff < 0) {
-                 // Ini adalah logic pencegah negatif yang sering terjadi
-                countdownDivSimple.innerHTML = `⚠️ ${nextName} sudah berlalu! Memuat jadwal...`;
-                clearInterval(countdownIntervalSimple);
-                loadJadwalSimple(); // Paksa reload untuk menemukan sholat berikutnya yang valid
-                return;
-            }
-
-            // KASUS 4: Hitungan Mundur Normal
+            // KASUS 3: Hitungan Mundur Normal
             let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             let seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -284,121 +275,97 @@
         }, 1000);
     }
 
-   // Fungsi utama untuk memuat jadwal (dari JSON lokal)
-async function loadJadwalSimple() {
-    const now = new Date(); // Waktu saat ini (e.g., 2025-11-16 21:18)
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Hanya tanggal hari ini
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
-    countdownDivSimple.innerHTML = "Memuat...";
-
-    let rawSchedule;
-    let success = false;
-    let dataToUse; // Data sholat yang akan dipakai (bisa hari ini atau besok)
-    let dateToUse = today; // Tanggal yang akan dipakai (default hari ini)
-
-    try {
-        const res = await fetch('jadwal.json'); 
-        if (!res.ok) throw new Error("Gagal memuat jadwal.json lokal.");
+    // Fungsi utama untuk memuat jadwal (dari JSON lokal)
+    async function loadJadwalSimple() {
+        const now = new Date(); // Waktu saat ini
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Hanya tanggal hari ini (00:00:00)
         
-        rawSchedule = await res.json();
-        
-        // Cek apakah ada sholat yang akan datang hari ini
-        const todayData = findScheduleByDate(rawSchedule.schedule, today);
-        
-        if (todayData) {
-            window.prayerTimesSimple = {
-                "Subuh": todayData.Subuh, "Dzuhur": todayData.Dzuhur, "Ashar": todayData.Ashar,
-                "Maghrib": todayData.Maghrib, "Isya": todayData.Isya
-            };
+        // Buat objek tanggal besok
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
-            // Coba temukan sholat berikutnya menggunakan data hari ini
-            const nextTodayPrayers = getNextPrayerTimesSimple(today, window.prayerTimesSimple);
+        if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
+        countdownDivSimple.innerHTML = "Memuat...";
 
-            if (nextTodayPrayers.length > 0) {
-                // Ada sholat yang akan datang hari ini. Gunakan data hari ini.
-                dataToUse = todayData;
-                dateToUse = today;
-                success = true;
-            } else {
-                // Semua sholat hari ini sudah lewat. Paksa cari data BESOK.
-                const nextData = findScheduleByDate(rawSchedule.schedule, tomorrow);
-                if (nextData) {
-                    dataToUse = nextData;
-                    dateToUse = tomorrow;
+        let rawSchedule;
+        let success = false;
+        let dataToUse; 
+        let dateToUse = today; 
+
+        try {
+            // AMBIL FILE JSON LOKAL
+            const res = await fetch('jadwal.json'); 
+            if (!res.ok) throw new Error(`Gagal memuat jadwal.json lokal. Status: ${res.status}`);
+            
+            rawSchedule = await res.json();
+            
+            const todayData = findScheduleByDate(rawSchedule.schedule, today);
+            
+            // Cek apakah semua sholat hari ini sudah lewat
+            if (todayData) {
+                // Isi sementara untuk dicek
+                const tempTimes = {
+                    "Subuh": todayData.Subuh, "Dzuhur": todayData.Dzuhur, "Ashar": todayData.Ashar,
+                    "Maghrib": todayData.Maghrib, "Isya": todayData.Isya
+                };
+
+                const nextTodayPrayers = getNextPrayerTimesSimple(today, tempTimes);
+
+                if (nextTodayPrayers.length > 0) {
+                    // Masih ada sholat hari ini. Gunakan data hari ini.
+                    dataToUse = todayData;
+                    dateToUse = today;
                     success = true;
                 } else {
-                    throw new Error("Jadwal besok tidak ditemukan di JSON. Perlu diperbarui.");
+                    // Semua sholat hari ini sudah lewat. Paksa cari data BESOK.
+                    const nextData = findScheduleByDate(rawSchedule.schedule, tomorrow);
+                    if (nextData) {
+                        dataToUse = nextData;
+                        dateToUse = tomorrow;
+                        success = true;
+                    } else {
+                        throw new Error("Jadwal besok tidak ditemukan di JSON.");
+                    }
                 }
+            } else {
+                // Data hari ini (tanggal saat ini) tidak ada di JSON sama sekali
+                throw new Error("Jadwal hari ini tidak ditemukan di JSON.");
             }
-        } else {
-            // Data hari ini (tanggal saat ini) tidak ada di JSON sama sekali
-            throw new Error("Jadwal hari ini tidak ditemukan di JSON.");
+            
+        } catch (error) {
+            console.error("Error memuat/menganalisis JSON:", error);
+            success = false;
+        }
+
+        if (!success) {
+            useDefaultJadwal();
+            setTimeout(startCountdownSimple, 1000); 
+            return; 
         }
         
-    } catch (error) {
-        console.error("Error memuat/menganalisis JSON:", error);
-        success = false;
-    }
-
-    if (!success) {
-        useDefaultJadwal();
-        setTimeout(startCountdownSimple, 1000); 
-        return; 
-    }
-    
-    // DATA DITEMUKAN & DIPILIH: Update tampilan dan global variables
-    
-    jadwalDivSimple.innerHTML = `
-        <span style="color: yellow; font-weight: bold;">(JADWAL HARIAN)</span><br>
-        Tanggal: <strong>${dataToUse.date}</strong><br>
-        Subuh : ${dataToUse.Subuh} <span style="font-size: 12px;">(Sudah di-offset)</span><br>
-        Terbit: ${dataToUse.Terbit} (Syuruq)<br>
-        Dzuhur : ${dataToUse.Dzuhur}<br>
-        Ashar : ${dataToUse.Ashar}<br>
-        Maghrib : ${dataToUse.Maghrib}<br>
-        Isya : ${dataToUse.Isya}
-    `;
-
-    // Update global prayerTimes dan prayerDate dengan data yang dipilih
-    window.prayerTimesSimple = {
-        "Subuh": dataToUse.Subuh,
-        "Dzuhur": dataToUse.Dzuhur,
-        "Ashar": dataToUse.Ashar,
-        "Maghrib": dataToUse.Maghrib,
-        "Isya": dataToUse.Isya
-    };
-    window.prayerDateSimple = dateToUse; 
-
-    // Jeda Stabilisasi 1 detik sebelum memulai countdown
-    setTimeout(startCountdownSimple, 1000); 
-}
-        
-        // DATA DITEMUKAN: Update tampilan dan global variables
-        const currentData = todayData; 
+        // DATA DITEMUKAN & DIPILIH: Update tampilan dan global variables
         
         jadwalDivSimple.innerHTML = `
             <span style="color: yellow; font-weight: bold;">(JADWAL HARIAN)</span><br>
-            Tanggal: <strong>${currentData.date}</strong><br>
-            Subuh : ${currentData.Subuh} <span style="font-size: 12px;">(Sudah di-offset)</span><br>
-            Terbit: ${currentData.Terbit} (Syuruq)<br>
-            Dzuhur : ${currentData.Dzuhur}<br>
-            Ashar : ${currentData.Ashar}<br>
-            Maghrib : ${currentData.Maghrib}<br>
-            Isya : ${currentData.Isya}
+            Tanggal: <strong>${dataToUse.date}</strong><br>
+            Subuh : ${dataToUse.Subuh} <span style="font-size: 12px;">(Sudah di-offset)</span><br>
+            Terbit: ${dataToUse.Terbit} (Syuruq)<br>
+            Dzuhur : ${dataToUse.Dzuhur}<br>
+            Ashar : ${dataToUse.Ashar}<br>
+            Maghrib : ${dataToUse.Maghrib}<br>
+            Isya : ${dataToUse.Isya}
         `;
 
+        // Update global prayerTimes dan prayerDate dengan data yang dipilih
         window.prayerTimesSimple = {
-            "Subuh": currentData.Subuh,
-            "Dzuhur": currentData.Dzuhur,
-            "Ashar": currentData.Ashar,
-            "Maghrib": currentData.Maghrib,
-            "Isya": currentData.Isya
+            "Subuh": dataToUse.Subuh,
+            "Terbit": dataToUse.Terbit,
+            "Dzuhur": dataToUse.Dzuhur,
+            "Ashar": dataToUse.Ashar,
+            "Maghrib": dataToUse.Maghrib,
+            "Isya": dataToUse.Isya
         };
-        // Atur tanggal jadwal ke tanggal yang benar-benar dimuat dari JSON
-        window.prayerDateSimple = new Date(currentData.date); 
+        window.prayerDateSimple = dateToUse; 
 
         // Jeda Stabilisasi 1 detik sebelum memulai countdown
         setTimeout(startCountdownSimple, 1000); 
@@ -410,7 +377,6 @@ async function loadJadwalSimple() {
     voiceSelectSimple.addEventListener('change', function() {
         localStorage.setItem('selectedAdzanVoiceSimple', this.value);
         localStorage.setItem('selectedAdzanIndexSimple', this.selectedIndex);
-        // Atur ulang sumber audio untuk tombol play
         const selectedOption = this.options[this.selectedIndex];
         audioSimple.src = this.value; 
         audioSimple.load();
@@ -418,11 +384,10 @@ async function loadJadwalSimple() {
 
     // Pemicu tombol play manual
     btnPlaySimple.addEventListener('click', function() {
-        // Pilihan Adzan normal
         let adzanSource = voiceSelectSimple.value; 
         
-        // Jika tombol ditekan saat subuh, gunakan file subuh
         const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
+        // Cek apakah sholat berikutnya adalah Subuh (untuk menggunakan file subuh yang berbeda)
         if (nextPrayers.length > 0 && nextPrayers[0].name === "Subuh") {
              adzanSource = voiceSelectSimple.options[voiceSelectSimple.selectedIndex].getAttribute('data-subuh');
         }
