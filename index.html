@@ -1,4 +1,3 @@
-// index.html (Versi Final dengan Audio Lokal)
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -41,7 +40,7 @@
             font-size: 14px;
             color: #b2dfdb;
         }
-        /* Tambahkan CSS untuk tombol play jika masih dibutuhkan */
+        /* CSS Wajib untuk Tombol Play Manual (AGAR MUNCUL) */
         #btnPlay-simple {
             background-color: #ffeb3b;
             color: #004d40;
@@ -144,10 +143,11 @@
     function playAdzanSimple(isSubuh = false) {
         audioSimple.src = isSubuh ? ADZAN_SUBUH_PATH : ADZAN_NORMAL_PATH;
         audioSimple.load();
+        
         audioSimple.play().catch(error => {
             console.warn("Gagal memutar audio, mungkin diblokir oleh browser:", error);
-            // Beri feedback visual jika autoplay diblokir
-            btnPlaySimple.innerHTML = "❌ Klik untuk Mengaktifkan Suara Otomatis!";
+            // Memberikan feedback yang jelas saat pemutaran otomatis diblokir
+            btnPlaySimple.innerHTML = "❌ Klik Dulu untuk Mengaktifkan Suara Otomatis!";
         });
     }
 
@@ -293,15 +293,12 @@
         const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
         let isSubuh = false; 
 
-        // Tentukan apakah adzan yang akan datang adalah Subuh
         if (nextPrayers.length > 0 && nextPrayers[0].name === "Subuh") {
             isSubuh = true;
-        } else if (nextPrayers.length === 0) {
-            // Jika sudah lewat Isya, diasumsikan test play menggunakan adzan normal
-            isSubuh = false; 
         }
 
         playAdzanSimple(isSubuh);
+        // Setelah diklik, ubah teks tombol untuk memberi konfirmasi
         btnPlaySimple.innerHTML = "✅ Suara Diaktifkan!";
     });
 
