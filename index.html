@@ -1,78 +1,48 @@
+// index.html (Versi Final dengan Audio Lokal)
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Adzan</title>
+    <title>Jadwal Adzan Simple</title>
     <style>
+        /* CSS DIBUAT MINIMALIS UNTUK FOKUS PADA FUNGSIONALITAS */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: transparent; /* Pastikan background transparan untuk widget */
+            padding: 20px;
+            background-color: #004d40;
+            color: #ffffff;
+            text-align: center;
         }
         .box-adzan-simple {
-            width: 100%;
-            max-width: 300px; 
-            background: linear-gradient(145deg, #004d40, #002d25); 
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-            padding: 20px;
-            text-align: center;
-            color: #ffffff;
             border: 2px solid #ffeb3b;
-        }
-        .title-simple {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #ffeb3b;
-            text-shadow: 1px 1px 2px #000;
-        }
-        .keterangan-muhammadiyah {
-            font-size: 14px; 
-            font-weight: 500;
-            color: #ffeb3b; 
-            margin-top: -15px; 
-            margin-bottom: 10px;
+            border-radius: 15px;
+            padding: 20px;
+            background-color: #002d25;
+            max-width: 300px;
+            margin: auto;
         }
         #countdown-simple {
-            font-size: 22px;
-            font-weight: 700;
-            background-color: rgba(255, 255, 255, 0.15);
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+            background-color: #4CAF50;
             padding: 10px;
             border-radius: 8px;
-            margin-bottom: 20px;
-            white-space: nowrap;
         }
         #jadwal-simple {
             font-size: 16px;
-            line-height: 1.8;
-            background: rgba(255, 215, 0, 0.1); 
-            padding: 15px;
-            border-radius: 12px;
             margin-top: 15px;
-            margin-bottom: 20px;
+            line-height: 1.5;
             color: #ffeb3b;
-            text-align: center;
         }
-        .voice-selector-simple {
+        .judul-kecil {
             font-size: 14px;
-            margin-bottom: 15px;
             color: #b2dfdb;
         }
-        .select-simple {
-            padding: 5px;
-            border-radius: 5px;
-            border: 1px solid #ffeb3b;
-            background-color: #004d40;
-            color: #ffffff;
-            cursor: pointer;
-        }
-        .btn-play-simple {
+        /* Tambahkan CSS untuk tombol play jika masih dibutuhkan */
+        #btnPlay-simple {
             background-color: #ffeb3b;
             color: #004d40;
             border: none;
@@ -80,9 +50,10 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            margin-top: 15px;
             transition: background-color 0.2s;
         }
-        .btn-play-simple:hover {
+        #btnPlay-simple:hover {
             background-color: #fff176;
         }
     </style>
@@ -90,64 +61,43 @@
 <body>
 
 <div class="box-adzan-simple">
-    <div class="title-simple">
-        <span style="font-size: 20px; vertical-align: middle;">🕌</span> 
-        Jadwal Adzan
-    </div>
-    <div class="keterangan-muhammadiyah">
-        (Untuk warga Muhammadiyah)
-    </div>
-
+    <h2>🕌 Jadwal Adzan</h2>
+    <div class="judul-kecil">(Test JSON Simple)</div>
+    
     <div id="countdown-simple">
         Memuat...
     </div>
 
-    <div class="voice-selector-simple">
-        Pilih suara adzan:
-        <select id="voiceSelect-simple" class="select-simple">
-            <option 
-                value="https://www.islamcan.com/audio/adhan/azan1.mp3" 
-                data-subuh="adzan-subuh-merdu.mp3" 
-                selected>Makkah
-            </option>
-            <option 
-                value="https://www.islamcan.com/audio/adhan/azan2.mp3" 
-                data-subuh="adzan-subuh-merdu.mp3"
-                >Madinah
-            </option>
-        </select>
-        <button id="btnPlay-simple" class="btn-play-simple">▶️ Putar Adzan</button>
+    <div id="jadwal-simple">
+        Memuat data jadwal...
     </div>
 
-    <div id="jadwal-simple">
-        Memuat jadwal dari file lokal...
-    </div>
+    <button id="btnPlay-simple">▶️ Aktifkan Suara / Putar Manual</button>
 </div>
 
 <audio id="audioSimple" preload="auto"></audio>
 
 <script>
-    // --- KONFIGURASI UMUM ---
-    const KOTA_NAMA = "Sleman (Yogyakarta)";
-    
-    // HANYA WAKTU ADZAN YANG AKAN DIHITUNG COUNTDOWN (Terbit/Syuruq TIDAK termasuk)
+    // --- KONFIGURASI PENTING ---
     const PRAYER_ORDER = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+    
+    // --- PATH FILE AUDIO LOKAL ANDA ---
+    const ADZAN_NORMAL_PATH = 'adzan.mp3';
+    const ADZAN_SUBUH_PATH = 'adzan_subuh.mp3';
     
     // --- VARIABEL GLOBAL & ELEMENT ---
     let countdownIntervalSimple;
     const countdownDivSimple = document.getElementById('countdown-simple');
     const jadwalDivSimple = document.getElementById('jadwal-simple');
     const audioSimple = document.getElementById('audioSimple');
-    const voiceSelectSimple = document.getElementById('voiceSelect-simple');
     const btnPlaySimple = document.getElementById('btnPlay-simple');
     
     window.prayerTimesSimple = {};
-    window.prayerDateSimple = new Date(); // Untuk menyimpan tanggal jadwal yang aktif
-    
+    window.prayerDateSimple = new Date(); 
+
     // --- JADWAL DEFAULT (Fallback Jika File JSON Gagal) ---
-    // Di sini pun 'Terbit' dimasukkan hanya untuk tampilan, bukan perhitungan
     const defaultPrayerTimes = {
-        "Subuh": "04:05", "Terbit": "05:15", "Dzuhur": "11:38", "Ashar": "14:59",
+        "Subuh": "04:05", "Dzuhur": "11:38", "Ashar": "14:59",
         "Maghrib": "17:50", "Isya": "19:00" 
     };
 
@@ -157,68 +107,56 @@
         window.prayerTimesSimple = defaultPrayerTimes;
         window.prayerDateSimple = new Date();
         jadwalDivSimple.innerHTML = `
-            <span style="color: red; font-weight: bold;">(JADWAL DEFAULT - FAILED TO LOAD)</span><br>
+            <span style="color: red; font-weight: bold;">(JADWAL DEFAULT - GAGAL MEMUAT)</span><br>
             Tanggal: <strong>Gagal memuat jadwal lokal!</strong><br>
             Subuh : 04:05<br>
-            Terbit: 05:15 (Syuruq)<br>
             Dzuhur : 11:38<br>
             Ashar : 14:59<br>
             Maghrib : 17:50<br>
             Isya : 19:00
         `;
-        countdownDivSimple.innerHTML = "Jadwal darurat dimuat.";
     }
 
-    // Fungsi untuk mencari jadwal di array JSON yang dimuat
     function findScheduleByDate(scheduleArray, targetDate) {
-        // Format tanggal target ke YYYY-MM-DD
         const targetDateStr = targetDate.toISOString().split("T")[0];
         return scheduleArray.find(item => item.date === targetDateStr);
     }
     
-    // Fungsi untuk menemukan waktu sholat berikutnya
     function getNextPrayerTimesSimple(date, times) {
         const now = new Date();
         const dateStr = date.toISOString().split("T")[0]; 
         const nextTimes = [];
         
-        // Iterasi HANYA pada waktu Adzan (Subuh, Dzuhur, Ashar, Maghrib, Isya)
         for (const name of PRAYER_ORDER) {
             const timeStr = times[name]; 
-            
-            // Pengecekan penting: Pastikan waktu ada di times (dari JSON)
             if (!timeStr) continue; 
             
-            // Gabungkan tanggal jadwal dengan waktu sholat
             const prayerDateTime = new Date(`${dateStr}T${timeStr}:00`);
             
-            // Cek apakah waktu sholat masih di masa depan
             if (prayerDateTime.getTime() > now.getTime()) { 
                 nextTimes.push({ name, time: prayerDateTime });
-                break; // Hentikan loop, karena sudah ketemu waktu terdekat
+                break; 
             }
         }
-
         return nextTimes;
     }
-
-    // Fungsi untuk memutar Adzan
-    function playAdzanSimple() {
+    
+    function playAdzanSimple(isSubuh = false) {
+        audioSimple.src = isSubuh ? ADZAN_SUBUH_PATH : ADZAN_NORMAL_PATH;
+        audioSimple.load();
         audioSimple.play().catch(error => {
             console.warn("Gagal memutar audio, mungkin diblokir oleh browser:", error);
-            // Tambahkan instruksi untuk mengatasi masalah autoplay browser
-            countdownDivSimple.innerHTML = "Klik 'Putar Adzan' sekali untuk mengaktifkan suara otomatis!";
+            // Beri feedback visual jika autoplay diblokir
+            btnPlaySimple.innerHTML = "❌ Klik untuk Mengaktifkan Suara Otomatis!";
         });
     }
 
-    // Fungsi utama untuk memulai countdown
+
     function startCountdownSimple() {
         if (countdownIntervalSimple) clearInterval(countdownIntervalSimple);
         
-        // Tambahkan pengamanan untuk mencegah script crash jika data belum dimuat
         if (Object.keys(window.prayerTimesSimple).length === 0) {
-            console.error("Gagal memulai countdown: data sholat kosong.");
-            countdownDivSimple.innerHTML = "Error data.";
+            countdownDivSimple.innerHTML = "Error: Data sholat kosong.";
             return;
         }
 
@@ -226,12 +164,10 @@
             const now = new Date().getTime();
             const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
             
-            // KASUS 1: Tidak ada sholat yang akan datang (terjadi setelah Isya)
+            // KASUS 1: Semua sholat sudah usai (setelah Isya)
             if (nextPrayers.length === 0) {
-                // Beri pesan dan panggil loadJadwalSimple() untuk memuat jadwal besok
                 countdownDivSimple.innerHTML = "Semua sholat telah usai. Memuat jadwal besok...";
                 clearInterval(countdownIntervalSimple);
-                // Setelah 3 detik, panggil loadJadwalSimple() untuk maju ke jadwal berikutnya
                 setTimeout(loadJadwalSimple, 3000); 
                 return;
             }
@@ -242,31 +178,18 @@
             
             const diff = nextTime - now;
 
-            // KASUS 2: Waktu Sholat Sudah Tiba (diff sangat dekat 0)
+            // KASUS 2: Waktu Sholat Tiba (Diff sangat dekat 0)
             if (diff <= 1000 && diff > -1000) { 
                 
-                let adzanSource = voiceSelectSimple.value;
-                let displayMessage = "Adzan Tiba!"; 
+                // Putar Adzan
+                const isSubuh = (nextName === "Subuh");
+                playAdzanSimple(isSubuh);
                 
-                if (nextName === "Subuh") {
-                    // Gunakan file adzan Subuh yang dikustom
-                    adzanSource = voiceSelectSimple.options[voiceSelectSimple.selectedIndex].getAttribute('data-subuh');
-                    displayMessage = "☀️ Adzan Subuh Tiba!";
-                }
-                
-                audioSimple.src = adzanSource;
-                audioSimple.load(); 
-                playAdzanSimple(); // Putar Adzan
-                
-                countdownDivSimple.innerHTML = `⭐ ${nextName}: ${displayMessage}`;
-                
-                // Atur timeout untuk menghentikan Adzan (3 MENIT) dan memuat ulang jadwal
-                setTimeout(() => {
-                    audioSimple.pause(); 
-                    loadJadwalSimple(); // Muat jadwal baru, jika ada
-                }, 180000); // 3 Menit
+                countdownDivSimple.innerHTML = `⭐ ADZAN ${nextName} Tiba! ⭐`;
                 
                 clearInterval(countdownIntervalSimple);
+                // Muat ulang jadwal setelah jeda Adzan 3 menit (180000 ms)
+                setTimeout(loadJadwalSimple, 180000); 
                 return;
             }
             
@@ -275,22 +198,18 @@
             let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             let seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            // Format angka menjadi dua digit
             hours = ("0" + hours).slice(-2);
             minutes = ("0" + minutes).slice(-2);
             seconds = ("0" + seconds).slice(-2);
 
-            countdownDivSimple.innerHTML = `Menuju Adzan Berikutnya: ${nextName} : ${hours}:${minutes}:${seconds}`;
+            countdownDivSimple.innerHTML = `Menuju ${nextName}: ${hours}:${minutes}:${seconds}`;
 
         }, 1000);
     }
 
-    // Fungsi utama untuk memuat jadwal (dari JSON lokal)
     async function loadJadwalSimple() {
         const now = new Date(); 
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
-        
-        // Buat objek tanggal besok
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -303,17 +222,13 @@
         let dateToUse = today; 
 
         try {
-            // AMBIL FILE JSON LOKAL
             const res = await fetch('jadwal.json'); 
-            if (!res.ok) throw new Error(`Gagal memuat jadwal.json lokal. Status: ${res.status}`);
+            if (!res.ok) throw new Error(`Status: ${res.status}`);
             
             rawSchedule = await res.json();
-            
             const todayData = findScheduleByDate(rawSchedule.schedule, today);
             
-            // --- LOGIKA PEMILIHAN JADWAL ---
             if (todayData) {
-                // Isi sementara untuk dicek (HANYA waktu Adzan)
                 const tempTimes = {
                     "Subuh": todayData.Subuh, "Dzuhur": todayData.Dzuhur, "Ashar": todayData.Ashar,
                     "Maghrib": todayData.Maghrib, "Isya": todayData.Isya
@@ -322,56 +237,77 @@
                 const nextTodayPrayers = getNextPrayerTimesSimple(today, tempTimes);
 
                 if (nextTodayPrayers.length > 0) {
-                    // Masih ada sholat hari ini. Gunakan data hari ini.
                     dataToUse = todayData;
                     dateToUse = today;
                     success = true;
                 } else {
-                    // Semua sholat hari ini sudah lewat. Paksa cari data BESOK.
                     const nextData = findScheduleByDate(rawSchedule.schedule, tomorrow);
                     if (nextData) {
                         dataToUse = nextData;
                         dateToUse = tomorrow;
                         success = true;
                     } else {
-                        throw new Error("Jadwal besok tidak ditemukan di JSON.");
+                        throw new Error("Jadwal hari ini sudah lewat dan jadwal besok tidak ditemukan.");
                     }
                 }
             } else {
-                // Data hari ini (tanggal saat ini) tidak ada di JSON sama sekali
-                throw new Error("Jadwal hari ini tidak ditemukan di JSON.");
+                throw new Error("Jadwal hari ini tidak ditemukan di file JSON.");
             }
             
-// SETELAH:
-} catch (error) {
-    console.error("Error memuat/menganalisis JSON:", error);
-    jadwalDivSimple.innerHTML = `Gagal memuat file! Cek Konsol (F12) untuk detail error.`;
-    success = false;
-}
-
-        // Tambahkan Pengecekan Debugging
-        console.log("SUCCESS:", success);
-        console.log("DATA DIGUNAKAN UNTUK HITUNG MUNDUR (prayerTimesSimple):", dataToUse);
-        console.log("TANGGAL DIGUNAKAN UNTUK HITUNG MUNDUR (prayerDateSimple):", dateToUse);
-
+        } catch (error) {
+            console.error("Error memuat JSON:", error);
+            jadwalDivSimple.innerHTML = `<span style="color: red; font-weight: bold;">❌ Gagal Memuat Jadwal! Error: ${error.message}</span>`;
+            success = false;
+        }
 
         if (!success) {
             useDefaultJadwal();
-            setTimeout(startCountdownSimple, 1000); 
+            setTimeout(startCountdownSimple, 100); 
             return; 
         }
         
-        // DATA DITEMUKAN & DIPILIH: Update tampilan dan global variables
-        
+        // DATA DITEMUKAN & DIPILIH
         jadwalDivSimple.innerHTML = `
-            <span style="color: yellow; font-weight: bold;">(JADWAL HARIAN)</span><br>
-            Tanggal: <strong>${dataToUse.date}</strong><br>
-            Subuh : ${dataToUse.Subuh} <span style="font-size: 12px;">(Sudah di-offset)</span><br>
-            Terbit: ${dataToUse.Terbit} (Syuruq)<br>
+            <span style="font-weight: bold;">Jadwal Tanggal: ${dataToUse.date}</span><br>
+            Subuh : ${dataToUse.Subuh}<br>
             Dzuhur : ${dataToUse.Dzuhur}<br>
             Ashar : ${dataToUse.Ashar}<br>
             Maghrib : ${dataToUse.Maghrib}<br>
             Isya : ${dataToUse.Isya}
         `;
 
-        // Update global prayerTimes dan prayerDate HANYA D
+        window.prayerTimesSimple = {
+            "Subuh": dataToUse.Subuh,
+            "Dzuhur": dataToUse.Dzuhur,
+            "Ashar": dataToUse.Ashar,
+            "Maghrib": dataToUse.Maghrib,
+            "Isya": dataToUse.Isya
+        };
+        window.prayerDateSimple = dateToUse; 
+
+        setTimeout(startCountdownSimple, 100); 
+    }
+    
+    // --- EVENT LISTENER (Play Manual) ---
+    btnPlaySimple.addEventListener('click', function() {
+        const nextPrayers = getNextPrayerTimesSimple(window.prayerDateSimple, window.prayerTimesSimple);
+        let isSubuh = false; 
+
+        // Tentukan apakah adzan yang akan datang adalah Subuh
+        if (nextPrayers.length > 0 && nextPrayers[0].name === "Subuh") {
+            isSubuh = true;
+        } else if (nextPrayers.length === 0) {
+            // Jika sudah lewat Isya, diasumsikan test play menggunakan adzan normal
+            isSubuh = false; 
+        }
+
+        playAdzanSimple(isSubuh);
+        btnPlaySimple.innerHTML = "✅ Suara Diaktifkan!";
+    });
+
+    // --- INITIALIZATION ---
+    loadJadwalSimple();
+</script>
+
+</body>
+</html>
