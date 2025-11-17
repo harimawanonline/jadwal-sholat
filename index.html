@@ -20,7 +20,7 @@
             padding: 20px;
             background-color: #002d25;
             max-width: 300px;
-            margin: auto;
+            margin: 20px auto 10px auto; /* Tambah margin atas/bawah */
         }
         #countdown-simple {
             font-size: 24px;
@@ -45,12 +45,15 @@
             background-color: #ffeb3b;
             color: #004d40;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 20px; /* Diperbesar agar mudah diklik */
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
             margin-top: 15px;
             transition: background-color 0.2s;
+            display: block; /* Pastikan tombol mengambil lebar penuh container */
+            width: 300px; /* Samakan dengan max-width widget */
+            margin: 0 auto; /* Posisi di tengah */
         }
         #btnPlay-simple:hover {
             background-color: #fff176;
@@ -70,9 +73,9 @@
     <div id="jadwal-simple">
         Memuat data jadwal...
     </div>
-
-    <button id="btnPlay-simple">▶️ Aktifkan Suara / Putar Manual</button>
 </div>
+
+<button id="btnPlay-simple">▶️ Aktifkan Suara / Putar Manual</button>
 
 <audio id="audioSimple" preload="auto"></audio>
 
@@ -146,7 +149,6 @@
         
         audioSimple.play().catch(error => {
             console.warn("Gagal memutar audio, mungkin diblokir oleh browser:", error);
-            // Memberikan feedback yang jelas saat pemutaran otomatis diblokir
             btnPlaySimple.innerHTML = "❌ Klik Dulu untuk Mengaktifkan Suara Otomatis!";
         });
     }
@@ -298,7 +300,6 @@
         }
 
         playAdzanSimple(isSubuh);
-        // Setelah diklik, ubah teks tombol untuk memberi konfirmasi
         btnPlaySimple.innerHTML = "✅ Suara Diaktifkan!";
     });
 
